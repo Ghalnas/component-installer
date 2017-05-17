@@ -11,6 +11,7 @@
 
 namespace ComponentInstaller\Process;
 
+use ComponentInstaller\Util\SymfonyConfig;
 use Composer\IO\IOInterface;
 use Composer\Composer;
 use Composer\IO\NullIO;
@@ -68,6 +69,12 @@ class Process implements ProcessInterface
     protected $options;
 
     /**
+     * Used to retrive folders according to Symfony's standards
+     * @var SymfonyConfig
+     */
+    protected $symfonyConfig;
+
+    /**
      * {@inheritdoc}
      */
     public function __construct(Composer $composer = null, IOInterface $io = null)
@@ -76,10 +83,12 @@ class Process implements ProcessInterface
         $this->io = isset($io) ? $io : new NullIO();
         $this->fs = new Filesystem();
         $this->installationManager = $this->composer->getInstallationManager();
-        
+
         // TODO: Break compatibility and expect in interface
         $args = func_get_args();
         $this->options = count($args) > 2 && is_array($args[2]) ? $args[2]: array();
+
+        $this->symfonyConfig = SymfonyConfig::getInstance($this->composer);
     }
 
     /**
@@ -89,11 +98,7 @@ class Process implements ProcessInterface
     {
         // Retrieve the configuration variables.
         $this->config = $this->composer->getConfig();
-        if (isset($this->config)) {
-            if ($this->config->has('component-dir')) {
-                $this->componentDir = $this->config->get('component-dir');
-            }
-        }
+        $this->componentDir = $this->symfonyConfig->getComponentDir();
 
         // Get the available packages.
         $allPackages = array();

@@ -11,6 +11,7 @@
 
 namespace ComponentInstaller;
 
+use ComponentInstaller\Util\SymfonyConfig;
 use Composer\Installer\LibraryInstaller;
 use Composer\Script\Event;
 use Composer\Package\PackageInterface;
@@ -24,12 +25,6 @@ class Installer extends LibraryInstaller
     private static $defaultProcesses = array(
         // Copy the assets to the Components directory.
         "ComponentInstaller\\Process\\CopyProcess",
-        // Build the require.js file.
-        "ComponentInstaller\\Process\\RequireJsProcess",
-        // Build the require.css file.
-        "ComponentInstaller\\Process\\RequireCssProcess",
-        // Compile the require-built.js file.
-        "ComponentInstaller\\Process\\BuildJsProcess",
     );
 
     /**
@@ -114,6 +109,7 @@ class Installer extends LibraryInstaller
     {
         $this->componentDir = $this->getComponentDir();
         $this->filesystem->ensureDirectoryExists($this->componentDir);
+        $this->vendorDir = SymfonyConfig::getInstance($this->composer)->getVendorDir();
         parent::initializeVendorDir();
     }
 
@@ -122,8 +118,7 @@ class Installer extends LibraryInstaller
      */
     public function getComponentDir()
     {
-        $config = $this->composer->getConfig();
-        return $config->has('component-dir') ? $config->get('component-dir') : 'components';
+        return SymfonyConfig::getInstance($this->composer)->getComponentDir();
     }
 
     /**
@@ -175,9 +170,19 @@ class Installer extends LibraryInstaller
         $io->write('<info>Compiling component files</info>');
 
         // Set up all the processes.
-        $processes = $config->has('component-processes') ? 
-                $config->get('component-processes') :
-                static::$defaultProcesses;
+        if ($config->has('component-processes')) {
+            $processes = $config->get('component-processes');
+        } else {
+            if (SymfonyConfig::getInstance($composer)->isFullyBuilt()) {
+                // Build the require.js file.
+                static::$defaultProcesses[] = "ComponentInstaller\\Process\\RequireJsProcess";
+                // Build the require.css file.
+                static::$defaultProcesses[] = "ComponentInstaller\\Process\\RequireCssProcess";
+                // Compile the require-built.js file.
+                static::$defaultProcesses[] = "ComponentInstaller\\Process\\BuildJsProcess";
+            }
+            $processes = static::$defaultProcesses;
+        }
 
         // Initialize and execute each process in sequence.
         foreach ($processes as $process) {
@@ -195,7 +200,7 @@ class Installer extends LibraryInstaller
                 $io->write("<warning>Process class '$class' not found, skipping this process</warning>");
                 continue;
             }
-            
+
             /** @var \ComponentInstaller\Process\Process $process */
             $process = new $class($composer, $io, $options);
             // When an error occurs during initialization, end the process.

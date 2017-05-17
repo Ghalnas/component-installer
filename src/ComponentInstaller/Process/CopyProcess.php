@@ -10,6 +10,10 @@
  */
 
 namespace ComponentInstaller\Process;
+use ComponentInstaller\Util\SymfonyConfig;
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 /**
  * Process which copies components from their source to the components folder.
@@ -47,6 +51,10 @@ class CopyProcess extends Process
                 // Only act on the files if they're available.
                 if (isset($extra['component'][$type]) && is_array($extra['component'][$type])) {
                     foreach ($extra['component'][$type] as $file) {
+                        $regex = $this->symfonyConfig->getFileRegex();
+                        if ($regex != null && $regex && !preg_match($regex, $file)) {
+                            continue;
+                        }
                         // Make sure the file itself is available.
                         $source = $packageDir.DIRECTORY_SEPARATOR.$file;
 
@@ -54,13 +62,11 @@ class CopyProcess extends Process
                         foreach ($this->fs->recursiveGlobFiles($source) as $filesource) {
                             // Find the final destination without the package directory.
                             $withoutPackageDir = str_replace($packageDir.DIRECTORY_SEPARATOR, '', $filesource);
-
                             // Construct the final file destination.
                             $destination = $this->componentDir.DIRECTORY_SEPARATOR.$componentName.DIRECTORY_SEPARATOR.$withoutPackageDir;
 
                             // Ensure the directory is available.
                             $this->fs->ensureDirectoryExists(dirname($destination));
-
                             // Copy the file to its destination.
                             copy($filesource, $destination);
                         }
@@ -68,7 +74,13 @@ class CopyProcess extends Process
                 }
             }
         }
-
+        if ($this->symfonyConfig->isDeleting()) {
+            $di = new RecursiveDirectoryIterator($this->symfonyConfig->getVendorDir(), FilesystemIterator::SKIP_DOTS);
+            $ri = new RecursiveIteratorIterator($di, RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ( $ri as $file ) {
+                $file->isDir() ?  rmdir($file) : unlink($file);
+            }
+        }
         return true;
     }
 }
