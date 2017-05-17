@@ -1,6 +1,6 @@
 # Component Installer for [Composer](http://getcomposer.org) [![Build Status](https://secure.travis-ci.org/RobLoach/component-installer.png?branch=master)](http://travis-ci.org/RobLoach/component-installer)
 
-Allows installation of Components via [Composer](http://getcomposer.org).
+Symfony supoprt for [Component-installer](https://github.com/RobLoach/component-installer)
 
 ## Install
 
@@ -91,6 +91,67 @@ will install jQuery to *public/jquery* rather than *components/jquery*:
 ```
 
 Defaults to `components`.
+
+### Vendor Directory
+
+The Vendor directory is where components are downloaded before being copied to the Installation directory.
+It is by default in component-installer/tmp, but you can use Composer's default vendor directory in *composer.json*'s `config` :
+
+``` json
+{
+    "config": {
+        "component-use-base-vendor-dir": true
+    }
+}
+```
+
+Defaults to `false`.
+
+### Keeping temporary files
+
+By default, files downloaded in the Vendor directory are removed after being copied in the Installation directory.
+You can chose to keep them :
+
+``` json
+{
+    "config": {
+        "component-remove-tmp": false
+    }
+}
+```
+
+Defaults to `true`.
+
+### Full building
+
+Component-installer base package generates require files. This behavior has been set to optional and is by default disabled.
+You can enable it :
+
+``` json
+{
+    "config": {
+        "component-full-build": true
+    }
+}
+```
+
+Defaults to `false`.
+
+### Installed files filter
+
+The files installed in the Installation directory are specified in each component's configuration.
+By specifying a regex, you can filter which files you want to install in those specified files :
+
+``` json
+{
+    "config": {
+        "component-file-regex": false
+    }
+}
+```
+
+Defaults to `#^((?!(slim|map)).)*\.min\.(js|css)$#`, which allows minified js and css files, ignoring the map and slim files.
+Setting `component-file-regex` to `false` or `null` will disable the regex check and install the specified files in each component.
 
 ### Base URL
 
@@ -311,7 +372,7 @@ There are many other amazing projects from which Component Installer was
 inspired. It is encouraged to take a look at some of the [other great package
 management systems](http://github.com/wilmoore/frontend-packagers):
 * [npm](http://npmjs.org)
-* [bower](http://bower.io/)
+* [bower](http://twitter.github.com/bower/)
 * [component](http://github.com/component/component)
 * [Jam](http://jamjs.org)
 * [volo](http://volojs.org)
