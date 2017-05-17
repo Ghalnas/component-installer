@@ -1,5 +1,5 @@
 {
-    "name": "robloach/component-installer",
+    "name": "ghalnas/component-installer",
     "description": "Allows installation of Components via Composer.",
     "type": "composer-plugin",
     "license": "MIT",
